@@ -1,0 +1,15 @@
+.env
+__pycache__/
+*.pyc
+*.db
+database/
+data/
+# Environment files
+.env.*
+.env.local
+.env*.local
+*.backup
+# Secrets
+secrets.*
+credentials.*
+*.key
