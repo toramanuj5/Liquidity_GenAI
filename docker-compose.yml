@@ -1,21 +1,6 @@
-version: '3.9'
+version: '3.8'
 
 services:
-  backend:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile.backend
-    container_name: liquidity_genai-backend-1
-    env_file:
-      - .env
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./data:/app/data
-      - ./vector_store:/app/vector_store
-    depends_on:
-      - db
-
   db:
     image: postgres:15
     restart: always
@@ -24,23 +9,57 @@ services:
       POSTGRES_USER: genai_user
       POSTGRES_PASSWORD: securepassword
       POSTGRES_DB: genai_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U genai_user -d genai_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.backend
+    container_name: liquidity_genai-backend-1
+    env_file:
+      - .env
+    environment:
+      DB_USER: genai_user
+      DB_PASSWORD: securepassword
+      DB_HOST: db
+      DB_NAME: genai_db
+      PYTHONPATH: /app
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
 
   streamlit:
     build:
       context: .
       dockerfile: streamlit_app/Dockerfile.streamlit
+    container_name: liquidity_genai-streamlit-1
     env_file:
       - .env
+    environment:
+      BACKEND_URL: http://backend:8000
     ports:
       - "8501:8501"
     volumes:
-      - ./data:/app/data
+      - ./data:/app/data:ro
     depends_on:
-      - backend
+      backend:
+        condition: service_started
+    restart: unless-stopped
 
 volumes:
-    postgres_data:
+  postgres_data:

@@ -21,8 +21,10 @@ faiss-cpu==1.7.4
 python-multipart==0.0.9
 pdfminer.six==20221105
 pypdf==3.17.4
+PyPDF2==3.0.1
 python-docx==1.1.0
 unstructured==0.11.5
+
 
 # ORM and Email
 SQLAlchemy==2.0.30

@@ -1,16 +1,23 @@
-# 1. Base image
 FROM python:3.10-slim
 
-# 2. Set working directory
 WORKDIR /app
 
-# 3. Copy backend code
-COPY backend/ .
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc python3-dev && \
+    rm -rf /var/lib/apt/lists/*
 
-# 4. Install dependencies
-RUN apt-get update && apt-get install -y git \
- && pip install --no-cache-dir --upgrade pip \
- && pip install --no-cache-dir -r requirements.txt
+# Copy requirements first (for caching)
+COPY backend/requirements.txt .
 
-# 5. Run FastAPI with uvicorn
+# Install Python packages
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Copy backend code
+COPY backend .
+
+# Set Python path
+ENV PYTHONPATH=/app
+
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
